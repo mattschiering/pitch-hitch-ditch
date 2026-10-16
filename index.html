@@ -9,82 +9,31 @@
 <body>
   <header>
     <h1>Pitch, Hitch, or <span>Ditch</span></h1>
-    <p class="tagline">Market the right product to the right customer at the right stage of the buyer journey.</p>
-    <div id="tracker" class="tracker hidden"></div>
+    <div id="teamHeader" class="team-header hidden"></div>
   </header>
 
   <main>
-    <!-- SETUP -->
-    <section id="screenSetup" class="screen active">
-      <div class="panel">
-        <h2>How to play</h2>
-        <ol>
-          <li>Every team draws a <b>Buyer Persona</b>, a <b>Product</b> and a <b>Buyer Journey</b> card.</li>
-          <li>All teams prepare their pitch <b>at the same time</b>. You get <b id="prepSecondsText">90</b> seconds.</li>
-          <li>Then each team pitches <b>live</b> to the judges, in front of the room.</li>
-          <li>Pass or fail, you draw three new cards next round.</li>
-          <li>Teams <b>keep every Journey stage they pass</b> and never draw it again. Collect all four to finish!</li>
-        </ol>
-        <h3>Teams</h3>
-        <div id="teamInputs"></div>
-        <div class="btn-row left">
-          <button class="btn secondary" id="btnAddTeam">+ Add team</button>
-        </div>
-        <button class="btn primary big wide" id="btnStart">Start Game</button>
-      </div>
+    <section id="viewJoin" class="panel">
+      <h2>Join the game</h2>
+      <label class="field">Game code
+        <input id="joinCode" type="text" maxlength="6" placeholder="ABCDE" autocapitalize="characters" autocomplete="off">
+      </label>
+      <label class="field">Team name
+        <input id="joinName" type="text" maxlength="24" placeholder="Team Awesome" autocomplete="off">
+      </label>
+      <p id="joinError" class="error"></p>
+      <button class="btn primary big wide" id="btnJoin">Join</button>
     </section>
 
-    <!-- PREP: all teams at once -->
-    <section id="screenPrep" class="screen">
-      <div class="round-title" id="prepRoundTitle"></div>
-      <div class="timer-wrap">
-        <div class="timer" id="timer">90</div>
-        <div class="bar"><div id="timerBar"></div></div>
-        <div class="btn-row">
-          <button class="btn primary big" id="btnStartPrep">Start Prep Timer</button>
-          <button class="btn secondary hidden" id="btnEndPrep">End prep early</button>
-        </div>
-      </div>
-      <div class="team-grid" id="teamGrid"></div>
-    </section>
-
-    <!-- PITCH: one team at a time -->
-    <section id="screenPitch" class="screen">
-      <div class="round-title" id="pitchRoundTitle"></div>
-      <div class="spotlight">
-        <div class="up-next" id="upNext"></div>
-        <div class="cards" id="pitchCards"></div>
-        <p class="judge-q">Judges: did the pitch fit this customer at this stage?</p>
-        <div class="btn-row">
-          <button class="btn pass big" id="btnPass">✓ Pass</button>
-          <button class="btn fail big" id="btnFail">✗ Fail</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- ROUND SUMMARY -->
-    <section id="screenSummary" class="screen">
-      <div class="panel wide-panel">
-        <h2 id="summaryTitle">Round results</h2>
-        <div id="summaryList"></div>
-        <button class="btn primary big wide" id="btnNextRound">Deal Next Round</button>
-      </div>
-    </section>
-
-    <!-- GAME OVER -->
-    <section id="screenOver" class="screen">
-      <div class="panel wide-panel">
-        <h2>🏆 Game over!</h2>
-        <p class="muted">Every team has collected all four Buyer Journey cards. Ranked by fewest rounds:</p>
-        <div id="finalList"></div>
-        <button class="btn primary big wide" id="btnPlayAgain">Play Again</button>
-      </div>
-    </section>
+    <section id="viewGame" class="hidden"></section>
   </main>
 
   <div id="confetti"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+  <script src="config.js"></script>
   <script src="cards.js"></script>
-  <script src="game.js"></script>
+  <script src="common.js"></script>
+  <script src="student.js"></script>
 </body>
 </html>
