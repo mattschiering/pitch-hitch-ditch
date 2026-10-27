@@ -32,7 +32,15 @@ async function join() {
   $("btnJoin").disabled = true;
   const { data: game } = await sb.from("games").select("*").eq("code", code).maybeSingle();
   if (!game) { $("btnJoin").disabled = false; return err("No game found with that code."); }
-  if (game.status !== "lobby") { $("btnJoin").disabled = false; return err("That game has already started."); }
+  if (game.status !== "lobby") {
+    // Game already running: this is a team getting back in. Match by exact team name.
+    const { data: teamId } = await sb.rpc("rejoin_team", { p_code: code, p_name: name });
+    $("btnJoin").disabled = false;
+    if (!teamId) return err("That game has already started. To get back in, enter your exact team name.");
+    const { data: back } = await sb.from("teams").select("*").eq("id", teamId).single();
+    save({ teamId });
+    return enterGame(game.id, back);
+  }
   const { data: team, error } = await sb.from("teams").insert({ game_id: game.id, name }).select().single();
   $("btnJoin").disabled = false;
   if (error) return err(error.code === "23505" ? "That team name is taken. Pick another." : "Could not join: " + error.message);
@@ -70,7 +78,7 @@ function render() {
   if (sig === S.sig) return;
   S.sig = sig;
 
-  $("teamHeader").innerHTML = `<b>${esc(team.name)}</b> <span class="badges">${badgesHtml(team)}</span>`;
+  $("teamHeader").innerHTML = `<b>${esc(team.name)}</b> <span class="badges">${badgesHtml(team)}</span> <span class="code-chip" title="Game code">${esc(game.code)}</span>`;
   const body = $("viewGame");
 
   if (game.status === "lobby") {

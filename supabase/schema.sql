@@ -77,3 +77,16 @@ create policy hands_delete on hands for delete to authenticated using (is_host(g
 
 -- live updates
 alter publication supabase_realtime add table games, teams, hands;
+
+-- Rejoin: lets a team that dropped (new browser, cleared data) take its team back by code + exact name.
+-- The hand rules follow the team's owner, so the rejoining device regains that team's private hand.
+create or replace function rejoin_team(p_code text, p_name text) returns uuid
+language plpgsql security definer set search_path = public as $$
+declare t uuid;
+begin
+  select teams.id into t from teams join games on games.id = teams.game_id
+   where games.code = upper(p_code) and lower(teams.name) = lower(p_name) limit 1;
+  if t is null then return null; end if;
+  update teams set owner_uid = auth.uid() where id = t;
+  return t;
+end $$;

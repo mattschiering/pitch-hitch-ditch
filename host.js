@@ -2,7 +2,7 @@
 // Keep this tab open for the whole game: it drives the timer and the round flow.
 
 const HOST_KEY = "phd-host-game";
-const H = { game: null, teams: [], hands: {}, personaDeck: [], productDeck: [], sig: "", busy: false, subscribed: false };
+const H = { game: null, teams: [], hands: {}, sig: "", busy: false, subscribed: false };
 
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ";
 
@@ -10,9 +10,15 @@ function makeCode() {
   return Array.from({ length: 5 }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join("");
 }
 
-function drawFrom(key, source) {
-  if (!H[key].length) H[key] = shuffle(source);
-  return H[key].pop();
+// Pick a card nobody else has this round and this team has never had.
+// Falls back gracefully if the pool is too small (more teams or rounds than cards).
+function pickFresh(pool, usedThisRound, teamHistory) {
+  const notUsed = pool.filter((c) => !usedThisRound.has(c.name));
+  const fresh = notUsed.filter((c) => !teamHistory.has(c.name));
+  const choices = fresh.length ? fresh : notUsed.length ? notUsed : pool;
+  const card = choices[Math.floor(Math.random() * choices.length)];
+  usedThisRound.add(card.name);
+  return card;
 }
 
 function activeTeams() { return H.teams.filter((t) => !isDone(t)); }
@@ -91,12 +97,23 @@ function dealRound() {
   return guarded(async () => {
     const round = H.game.round + 1;
     const active = activeTeams();
-    const rows = active.map((team) => {
+    // Every persona and product each team has already had, from earlier rounds
+    const { data: past } = await sb.from("hands").select("team_id, persona, product").eq("game_id", H.game.id);
+    const seen = {};
+    (past || []).forEach((h) => {
+      const s = seen[h.team_id] || (seen[h.team_id] = { personas: new Set(), products: new Set() });
+      s.personas.add(h.persona.name);
+      s.products.add(h.product.name);
+    });
+    const personasNow = new Set();
+    const productsNow = new Set();
+    const rows = shuffle(active).map((team) => {
       const remaining = STAGES.filter((s) => !team.collected.includes(s.name));
+      const history = seen[team.id] || { personas: new Set(), products: new Set() };
       return {
         game_id: H.game.id, team_id: team.id, round,
-        persona: drawFrom("personaDeck", PERSONAS),
-        product: drawFrom("productDeck", PRODUCTS),
+        persona: pickFresh(PERSONAS, personasNow, history.personas),
+        product: pickFresh(PRODUCTS, productsNow, history.products),
         stage: remaining[Math.floor(Math.random() * remaining.length)].name
       };
     });
@@ -171,6 +188,9 @@ function joinUrl() {
 
 function render() {
   const { game, teams } = H;
+  // The join code stays visible on every screen so a team that drops can get back in
+  $("codeBar").classList.remove("hidden");
+  $("codeBar").innerHTML = `Join at <b>${esc(joinUrl())}</b> with code <span class="code-chip">${esc(game.code)}</span>`;
   const sig = JSON.stringify([game.status, game.round, game.prep_ends_at, game.pitch_index, teams.map((t) => [t.id, t.collected.length, t.last_result]), Object.keys(H.hands).length]);
   if (sig === H.sig) return;
   H.sig = sig;
